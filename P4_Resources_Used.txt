@@ -1,0 +1,11 @@
+Resources Used:
+
+0. Udacity
+
+1. http://tutorials.iq.harvard.edu/R/Rgraphics/Rgraphics.html
+
+2. http://docs.ggplot2.org/0.9.3.1/geom_point.html
+
+3. http://www.cookbook-r.com/Graphs/Facets_(ggplot2)/
+
+4. https://ggobi.github.io/ggally/ggpairs.html#plot-matrix-subsetting

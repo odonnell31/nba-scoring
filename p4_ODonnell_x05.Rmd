@@ -1,0 +1,530 @@
+Evolution of NBA Scoring by Michael_ODonnell
+========================================================
+
+The focus of this EDA is to investigate if and how scoring has changed in the NBA throughout the past 20 seasons (1996-97 to 2015-26). To do so, I will explore the data to display scoring as a whole and scoring over time. Usually, I will be using the variable Pts, which is actually a players average Points Per Game over a Season. Hope you enjoy!
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+
+```{r echo=FALSE, include=FALSE}
+# To ensure I'm working in the right directory..
+getwd()
+setwd("C:/Users/Michael/Documents/Udacity/Project 4 - R")
+list.files()
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(GGally)
+library(dplyr)
+library(RColorBrewer)
+```
+
+```{r echo=FALSE, Load_the_Data}
+#Loading the data
+players_all <- read.csv('players_all_x00.csv')
+
+players_all_reg <- subset(players_all, SeasonType == 'REG')
+```
+
+
+```{r echo=FALSE}
+# structure of the data and such
+names(players_all_reg)
+str(players_all_reg)
+head(players_all_reg, 5)
+```
+
+
+```{r echo=FALSE}
+# arrange the data
+players_all_reg <- arrange(players_all_reg, Season)
+```
+
+## Univariate Analysis
+
+First I will investigate some stats over the past 20 NBA Seasons
+
+```{r echo=FALSE}
+#Players' PPG, broken into bin sizes of 3 pts
+ggplot(data = players_all_reg, aes(y = Pts, x = 1)) +
+  geom_boxplot(outlier.color = 'grey', outlier.size = .5) +
+  scale_y_continuous(breaks = seq(0,40,3))
+```
+
+PPG = a players average Points Per Game over the course of a season
+This plot displays the average PPG of all NBA players of the past 20
+seasons. This is valuable to get a feel for the PPG norms.
+
+```{r echo=FALSE}
+#Players' Ast, broken into bin sizes of 1 Ast
+ggplot(data = players_all_reg, aes(x = Ast)) +
+  geom_histogram(binwidth = 1, aes(color = I('blue'), fill = I('black'))) +
+  scale_x_continuous(breaks = 0:14, name = 'Ast/Game') +
+  ylab("Count") +
+  ggtitle("Players Ast/game")
+```
+
+Ast = a players average Assists Per Game over the course of a season.
+Similar to the last plot, it is important to see the norms of Ast because assists lead to Pts and will hopefully show how players
+score in later plots.
+
+```{r echo=FALSE}
+ggplot(data = players_all_reg, aes(x = Reb)) +
+  geom_histogram(binwidth = 1, aes(color = I('blue'), fill = I('black'))) +
+  scale_x_continuous(breaks = 0:18, name = 'Reb/Game') +
+  ylab("Count") +
+  ggtitle("Players Reb/game")
+```
+
+Reb = a players average Rebounds Per Game over the course a season
+Rebounds are an essential stat in basketball, so this plot is valuable again to get a feel for the norms.
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+players_all_reg$PtsOverFGA <- ((players_all_reg$Pts)/(players_all_reg$FGA))
+
+ggplot(data = subset(players_all_reg, Pts > 0 & Min > 0 & FGA > 0),
+       aes(y = PtsOverFGA, x = 1)) +
+  geom_boxplot() +
+  ylab('Points/FGA')
+```
+
+FGA = average Field Goals Attempted per game over a season
+This plot is intended to explore the possibility that players are taking more/less shots to score in different seasons.
+
+```{r echo = FALSE}
+players_all_reg$PtsOverFGM <- ((players_all_reg$Pts)/(players_all_reg$FGM))
+
+ggplot(data = subset(players_all_reg, Pts > 0 & FGM > 0),
+       aes(y = PtsOverFGM, x = 1)) +
+  geom_boxplot() +
+  ylab('Points/FGM')
+```
+
+FGM = average Field Goals Made per game per season
+Similar to last plot, this plot explores if players are making more/less shots to score.
+
+```{r echo = FALSE}
+ggplot(data = players_all_reg, aes(y = Stl, x = 1)) +
+  geom_boxplot() +
+  ylab('Steals')
+```
+
+Stl = average steals per game
+This plot explores the norms for steals per game as a whole
+
+```{r echo = FALSE}
+ggplot(data = players_all_reg, aes(x = Season)) +
+  geom_bar(stat = 'count') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This plot shows the number of NBA players that played each Season. This is a very important plot to look at for the analysis; if some Seasons had significantly more/less players than others that could cause concern. Luckily they're all relatively similar.
+
+```{r echo = FALSE}
+ggplot(data = players_all_reg, aes(y = X3PTA, x = 1)) +
+  geom_boxplot() +
+  ylab('3Pt attempts')
+```
+
+3PTA = average number of three point attempts per game
+This plot explores the norms for three point attempts per player. This will be important as the analysis goes forward.
+
+```{r echo = FALSE}
+ggplot(data = players_all_reg, aes(y = FTA, x = 1)) +
+  geom_boxplot() +
+  ylab('Free Throw Attempts')
+```
+
+FTA = average number of free throw attempts per game
+This plot explores the norms for free throw attempts per player. This will be important as the analysis goes forward.
+
+```{r echo = FALSE}
+ggplot(data = players_all_reg, aes(y = FTM, x = 1)) +
+  geom_boxplot() +
+  ylab('Free Throws Made')
+```
+
+FTM = average number of free throws made per game
+This plot explores the norms for free throws made per player. This will be important as the analysis goes forward. Free throws tell a lot about scoring.
+
+```{r echo = FALSE}
+ggplot(data = players_all_reg, aes(y = OReb, x = 1)) +
+  geom_boxplot() +
+  ylab('Offensive Rebounds per game')
+```
+
+OReb = average number of Offensive Rebounds per game
+This plot explores the norms for Offensive Rebounds per player. This will be interesting to analyze compared to other variables, specifically scoring, because offensive rebounds usually happen near the opponents basket.
+
+```{r echo = FALSE}
+ggplot(data = players_all_reg, aes(y = FGPer, x = 1)) +
+  geom_boxplot() +
+  ylab('Field Goal Percentage')
+```
+
+FGPer = Field Goal Percentage
+This plot explores the norms for Field Goal Percentage per player. This will be interesting to analyze over time to see how scoring has or hasn't changed.
+
+## Univariate Analysis
+
+### What is the structure of your dataset?
+
+9081 players with 26 variables
+
+```{r echo=FALSE}
+str(players_all_reg)
+```
+
+### What is/are the main feature(s) of interest in your dataset?
+
+How has scoring changed in the past 20 years? So, the main features of interest
+are Pts, FG Percentage, and 3PT attempts.
+
+But, all the stats in the data will prove important to find how scoring
+has changed.
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+
+The relationship between Pts and all the other statistics. For example, how do
+Points relate to Rebounds? How do Points relate to Rebounds by Season?
+
+### Did you create any new variables from existing variables in the dataset?
+
+Yes: Pts/FGA and Pts/FGM
+
+I created both these variables to eventually measure if players, and maybe
+only certain players (starters, all-stars, etc.), score more/less per shot
+over the past 20 seasons.
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+I only used the arrange() function to sort the data by Season in the
+plots above.
+
+But interestingly, the Pts, Reb, and Ast distrubutions are very left-skewed.
+
+##Bivariate Analysis
+	
+### Bivariate Plots Section
+
+
+```{r echo=FALSE}
+#Making first new variable: PPG/Field Goals Attempted
+#Why this stat? This might show if players are scoring with more or less shot
+# attempts over time.
+
+players_all_reg$PtsOverFGA <- ((players_all_reg$Pts)/(players_all_reg$FGA))
+
+ggplot(data = subset(players_all_reg, 
+                     FGM > 0 & Pts > 0), aes(x = Season, 
+                                             y = PtsOverFGA )) +
+  geom_jitter(aes(color = I('black')), size = 2 , alpha= 0.1 )+
+  geom_boxplot(alpha= 0.5, color='yellow') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+FGA = average Field Goals Attempted per game over a season
+This plot is intended to explore the possibility that players are taking more/less shots to score in different seasons.
+
+```{r echo=FALSE}
+#Making second new variable: PPG/Field Goals Made
+#Why this stat? This might show if players are scoring more points per made
+# shot over time. Maybe more three point plays.
+
+players_all_reg$PtsOverFGM <- ((players_all_reg$Pts)/(players_all_reg$FGM))
+
+ggplot(data = subset(players_all_reg, 
+                     FGM > 0 & Pts > 0), aes(x = Season, 
+                                             y = PtsOverFGM )) +
+  geom_jitter(aes(color = I('black')), size = 2 , alpha= 0.1 )+
+  geom_boxplot(alpha= 0.5, color='yellow') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+FGM = average Field Goals Made per game per season
+Similar to last plot, this plot explores if players are making more/less shots to score.
+
+
+```{r echo=FALSE, fig.width=6, fig.height=6}
+#Players' PPG per season, represented as a boxplot
+ggplot(data = players_all_reg, aes(x = Season, y = Pts)) +
+  geom_boxplot(outlier.colour = 'blue') +
+  ylab('PPG') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Pts = PPG
+This plot elaborates on the PPG plot from the univariate section. Now you can see the PPG by Season rather than overall. This is intuitive, to see how much PPG changes over Seasons.
+
+```{r echo=FALSE}
+#Players' 3PT attempts by Season
+ggplot(data = players_all_reg, aes(x = Season, y = X3PTA, group = 1)) +
+  geom_point(aes(color = I('black')), size = 2,
+             stat = 'summary', fun.y = mean) +
+  coord_cartesian(ylim=c(1, 2)) +
+  scale_y_continuous(breaks = seq(0,2,.1), name = "3 Pointers Attempted") +
+  geom_smooth(color = I('red')) +
+  ggtitle("Average 3PT Attempts per player by Season") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+3 Pointers Attempted: average # of 3 point shots attempted by a player over a season
+This plot is to see if there's a trend in the amount of 3 pointers players are taking over the past 20 seasons. Looks like they are taking more nearly every year.
+
+```{r echo=FALSE}
+#Players' 3PT attempts by Season for players who average more than 10 PPG
+ggplot(data = subset(players_all_reg, Pts >= 10),
+       aes(x = Season, y = X3PTA, group = 1)) +
+  geom_point(aes(color = I('black')), size = 2,
+             stat = 'summary', fun.y = mean) +
+  coord_cartesian(ylim=c(1, 4)) +
+  scale_y_continuous(breaks = seq(0,6,1), name = "3 Pointers Attempted") +
+  geom_smooth(color = I('red')) +
+  ggtitle("Average 3PT Attempts for players with PPG >= 10 by Season") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This plot takes the last plot a step further; it checks to see if good scorers (players with >= 10 PPG) are taking more/less three pointers over time.
+
+```{r echo=FALSE}
+ggpairs(subset(players_all_reg, Min > 0),
+        columns = c('Min', 'Pts', 'OReb', 'Reb', 'Ast',
+                    'Stl', 'Blk', 'X3PTA', 'FTA'))
+```
+
+This plot is to analyze many variables with bivariate analysis. I will use information from this exploratory plot to decide some of my next plots.
+
+```{r echo=FALSE}
+ggplot(data = subset(players_all_reg, Pts > 0), aes(x = Stl, y = Pts)) +
+  geom_point(aes(color = I('black')), size = 1, alpha = 1/5) +
+  coord_cartesian(ylim=c(0, 36), xlim = c(0,3)) +
+  scale_y_continuous(breaks = seq(0,35,4), name = "PPG") +
+  geom_smooth(color = I('red')) +
+  ggtitle("Steals vs PPG")
+```
+
+From the ggpairs plot, I noticed that steals (average number of steals per game) and PPG have a fairly strong correlation. So, I made this plot to investigate further and noticed there is a positive trend.
+
+```{r echo=FALSE}
+ggplot(data = subset(players_all_reg, Pts > 0), aes(x = FTA, y = Pts)) +
+  geom_point(aes(color = I('black')), size = 1, alpha = 1/5) +
+  coord_cartesian(ylim=c(0, 36), xlim = c(0,12)) +
+  scale_y_continuous(breaks = seq(0,35,4), name = "PPG") +
+  geom_smooth(color = I('red')) +
+  ggtitle("FTA vs PPG")
+```
+
+Also from the ggpairs plot, I noticed a correlation between FTA (average # of Free Throws attempted per game) and PPG. So, in this plot I found that there is a strong positive correlation. Which, is intuitive but also important to show. This needs to be investigated over time to learn more.
+
+```{r echo=FALSE}
+ggplot(data = subset(players_all_reg, Pts > 0), aes(x = FTM, y = Pts)) +
+  geom_point(aes(color = I('black')), size = 1, alpha = 1/5) +
+  coord_cartesian(ylim=c(0, 36), xlim = c(0,9)) +
+  scale_y_continuous(breaks = seq(0,35,4), name = "PPG") +
+  geom_smooth(color = I('red')) +
+  ggtitle("FTM vs PPG")
+```
+
+Another investigation motivated by the ggpairs plot, this plot further analyzes the trend between FTM (average Free Throws Made per game) and PPG. There is a strong positive correlation.
+
+```{r echo=FALSE}
+ggplot(data = subset(players_all_reg, Pts > 0), aes(x = Reb, y = Pts)) +
+  geom_point(aes(color = I('black')), size = 1, alpha = 1/5) +
+  coord_cartesian(ylim=c(0, 36), xlim = c(0,15)) +
+  scale_y_continuous(breaks = seq(0,35,4), name = "PPG") +
+  geom_smooth(color = I('red')) +
+  ggtitle("Reb vs PPG")
+```
+
+A fourth plot derived from ggpairs, this trend between Reb (average Rebounds per game) and PPG is very interesting. It starts to dip off after about 12 Reb, maybe because the sample size isn't large enough at that point in the plot. But, if it is indicitive of a trend it's interesting that the best rebounders are not the best scorers.
+
+```{r echo=FALSE}
+ggplot(data = subset(players_all_reg, Pts > 0), aes(x = OReb, y = Pts)) +
+  geom_point(aes(color = I('black')), size = 1, alpha = 1/2) +
+  coord_cartesian(ylim=c(0, 36), xlim = c(0,7)) +
+  scale_y_continuous(breaks = seq(0,35,4), name = "PPG") +
+  scale_x_continuous(breaks = seq(0,8,.5), name = "Offensive Rebounds") +
+  geom_smooth(color = I('red')) +
+  ggtitle("OReb vs PPG")
+```
+
+This plot investigates OReb (average offensive rebounds per game) versus PPG. This is very interesting because a binary distribution is created if you look at the between the .5-1 Offensive Rebound mark. I could not differentiate why this occured, but I guess if I had each players position as a variable I could investigate further. Nonetheless, neat!
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+
+In particular, Pts interacted with the other variables in many unexpected ways.
+- Points had a high correlation with Steals
+- Points had a high correlation with Assists
+- Points had a much lower correlation with 3 Point Attempts than I expected
+- 3 Point Attempts have increased over the past 20 years, fairly linearly too
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+Yes!
+- Almost no relationship between Rebounds and Assists. I thought players that
+had rebounds would also have assists but that does not seem the case.
+- A strong relationship between Rebounds and Blocks. This shows me that those
+skills go together to some degree.
+- A .59 correlation between Steals and Free Throws Attempted. Again, this aligns with the strong correlation between Pts and Steals that I found. Because Pts and FTA had a strong relationship, as well as Pts and Steals. So, FTA and Steals had a relationship too. Which is surprising because I did not think Steals impacted points this much.
+
+### What was the strongest relationship you found?
+
+The strongest relationships all dealt with Minutes. More minutes led to a
+stronger relationship with almost every variable. 
+
+The strongest relationship, with a .902 correlation coefficient, was Pts
+and Minutes. No surprise there. You cannot score from the bench.
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, Multivariate_Plots}
+players_all_reg$steals.bucket <- cut(players_all_reg$Stl, 
+                             c(0,1,2,3,4,5))
+
+ggplot(data = subset(players_all_reg, Pts >= 10),
+       aes(x = Season, y = Pts, color = steals.bucket, group = 1)) +
+  geom_jitter(size = 3) +
+  ylab('PPG') +
+  ggtitle("Pts from players with PPG >= 10 vs Season, colored by steals") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.background = element_rect(fill = "black")) +
+  scale_color_brewer(palette = "Greens")
+```
+
+This plot is to further explore the impact of Steals on PPG (of good scorers with >= 10 PPG), but this time incorporate Season to see if the impact of steals changed over time. From this plot it's pretty obvious steals have always had a positive correlation with PPG. Cool! 
+
+
+```{r echo=FALSE}
+ggplot(aes(x = FGPer, 
+           y = Pts  , color = factor(steals.bucket)), 
+       data = subset(players_all_reg, Pts >= 10) )+
+      geom_point(alpha = 0.8, size = 2)+
+      geom_smooth(method = "lm", se = FALSE,size=1) +
+  ggtitle("Pts from players with PPG >= 10 vs FG Percentage, 
+          colored by steals") +
+  scale_color_brewer(palette = "Reds") +
+  theme_dark()
+```
+
+To change my angle on the last plot, this plot compares PPG (of good scorers, >= 10 PPG) and FGPer (Field Goal Percentage). Now the most interesting part of this plot is its colored by steals, so it actually color-coated sections. As you can see, FGPer must be related to Steals.
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+So in the bivariate analysis I noticed Steals highly impacted Points. So to further investigate, I first seperated (cut) steals into a new category called steals.bucket and investigated Pts vs Season, colored by steals (for only elite scoreres, 15PPG or more). I could see some minor trends here but nothing of enough obvious significance.
+
+So, in my second graph I looked at FG Percentage vs Pts colored by steals.bucket for good scorers (10PPG or more). This was facsinating! You can see almost three distinct groups among the colors. Basically, the trend is the higher the steal rate the lower the field goal percentage. My guess is the big men (forwards and centers) have less steals but take higher percentage shots. 
+
+
+### Were there any interesting or surprising interactions between features?
+
+Yes, as described above I am able to see a clear relationship between steals and field goal percentage.
+
+
+
+# Final Plots and Summary
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+#Show how Free Throws have effected scoring
+ggplot(data = subset(players_all_reg, Pts >=5),
+       aes(x = Season, y = FTA, group = 1)) +
+  geom_point(aes(color = I('black')), size = 2,
+             stat = 'summary', fun.y = mean) +
+  coord_cartesian(ylim=c(2.2, 3.5)) +
+  scale_y_continuous(breaks = seq(0,4,.2),
+                     name = "Average Free Throws Attempted") +
+  geom_smooth(color = I('blue'), linetype = 1, alpha = 1/5) +
+  ggtitle("Average Free Throws Attempted per player by Season") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Description One
+
+Plot One investigates the average number of Free Throws Attempted among scoring players (>= 5PPG) by Season. Which, I knew I wanted to investigate after I saw such a strong relationship between FTA and PPG in the bivariate plot section. 
+
+It's a fairly straight-forward plot, and it shows that Free Throw Attempts have actually decreased among scoring players during the past 20 regular seasons. Although we see a spike around 2005-2006, since then we see a steady decrease. As an NBA fan, this insight was shocking! I thought today's game has more shooting fouls than decades ago, but apparently not.
+
+This is very helpful to see the big picture of how players score over the past 20 years because Free Throws indicate play in the paint and number of fouls.
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+#Show how FG Percentage has evolved over time
+
+ggplot(data = subset(players_all_reg, Pts >=20),
+       aes(x = Season, y = FGPer, group = 1)) +
+  geom_point(aes(color = I('black')), size = 3,
+             stat = 'summary', fun.y = mean) +
+  coord_cartesian(ylim=c(.44,.49)) +
+  stat_summary(fun.y=mean, geom="line", alpha = 1/5) +
+  scale_y_continuous(breaks = seq(0,1,.01),
+                     name = "Average Field Goal Percentage") +
+  geom_smooth(color = I('blue'), linetype = 1, alpha = 1/4) +
+  ggtitle("Average Field Goal Percentage of Elite Scorers by Season") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Description Two
+
+Plot Two describes the Average Field Goal Percentage of Elite scorers (>= 20PPG) by Season. The intention of this plot is to expose if the game's best scorers are shooting a higher or lower field goal percentage as Seasons go on. But, this plot shows there is no real relationship for two reasons. One, the scale of the y-axis has a small overall window (.44-.49). Two, the smooth line looks cyclic and the points are scattered.
+
+After the multivariate plot section I knew I wanted to investigate Field Goal Percentage over time. And, just like the last plot I'm blown awaw the results did not match my expectations. I thought Field Goal Percentage among elite scorers was on the rise over time because the game and players evolve. But, this is another example that the statistics do not match casual fan observation.
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+ggplot(aes(x = FGPer, 
+           y = Pts  , color = factor(steals.bucket)), 
+       data = subset(players_all_reg, Pts >= 10) )+
+      geom_point(alpha = 0.8, size = 2)+
+      geom_smooth(method = "lm", se = FALSE, size=3, linetype = 1) +
+  ggtitle("PPG of Good Scorers vs FG Percentage, 
+          colored by steals") +
+  scale_color_brewer(palette = "Reds") +
+  theme_dark() +
+  guides(color = guide_legend(title = "Steals")) +
+  ylab("PPG") +
+  xlab("Field Goal Percentage") +
+  coord_cartesian(xlim=c(.29,.7))
+```
+
+### Description Three
+
+Plot Three is my favorite plot. It describes players Field Goal Percentage versus their PPG. The most notable part of this graph is the points are colored based on steals, and a geom_smooth line is drawn for each bucket. The lines clearly indicate that more steals usually correlate to higher PPG. And, as Field Goal Percentage rises so does PPG. Overall, this exposes the correlation between Steals and scoring. This plot is probably counter-intuitive to the average NBA fan because Steals are a defensive stat and PPG is an offensive stat! I will show many of my friends this plot and see if they can explain or have opinions.
+
+
+------
+
+# Reflection
+
+This analysis was conducted in an iterative manner. First, the univariate plots led me to the variables I wanted to see in the bivariate ggpairs plots. Then, the ggpairs plot led me to some variables I wanted to incorporate in the multivariate plot (specifically steals). Last, the combination of all exploration gave me insight to create the three final plots.
+
+The main struggle throughout the analysis was maintain a focus of variables relationships over time, not just overall. Because, oftentimes in this analysis how two variables interacted overall was not indicative of how they interacted over the 20 seasons. Specifically, FG Percentage and 3PT Percentage.
+
+One major success during this analysis was learning how to represent information in an effective manner! As I went over and over my plots they improved drastically. I didn't particularly like my final plots after submissions 1, 2, or 3, but I like the counter-intuitive results of the final plots now. I also REALLY like the skills I learned during this project.
+
+Question I have for future work:
+1. One very valuable variable for this dataset would be average shot distance per player. This could really help determine, without just the three point line stats we have, if players are getting closer are further away from the basket.
+2. A second valuable and simple variable, position of each player! Then, I could have seperated the players into guards and forwards to really dig into PPG by position. This would have been telling for many different areas of this analysis.
+3. I would like to use machine learning to predict PPG based on Steals, Rebounds, and Assists. That would have been really interesting.
+
+
+From the three above plots I can tell a lot about the evolution of scoring in the NBA over the past 20 years.
+1. NBA Players are taking and making more three pointers as the game evolves. Specifically, the scoring players are extending their range.
+2. NBA Players are surprisingly taking less Free Throws today than they were previously. I cannot explain why they are taking less free throws, maybe less foul calls or less drives to the paint, but I can explain that scoring has not decreased but moved away from the foul line.
+3. The field goal percentages of the best scoring players in the NBA over the past twenty years have not significantly changed. This means that they may be shooting from different spots on the floor, but they're overall percentage is relatively similar over time.
