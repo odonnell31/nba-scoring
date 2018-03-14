@@ -12,7 +12,7 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
 ```{r echo=FALSE, include=FALSE}
 # To ensure I'm working in the right directory..
 getwd()
-setwd("C:/Users/Michael/Documents/Udacity/Project 4 - R")
+# setwd("C:/Users/Michael/Documents/Udacity/Project 4 - R")
 list.files()
 ```
 
